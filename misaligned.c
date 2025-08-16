@@ -1,43 +1,39 @@
+#include "misaligned.h"
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
-#include <misaligned.h>
 
 const char* majorColor[MAJOR_COLORS] = {"White", "Red", "Black", "Yellow", "Violet"};
 const char* minorColor[MINOR_COLORS] = {"Blue", "Orange", "Green", "Brown", "Slate"};
 
-void generateColorMap(ColorMapEntry colorMap[]) {
-    int idx = 0;
+static void generateColorMap(struct ColorPair colorMap[]) {
+    int count = 0;
     for (int i = 0; i < MAJOR_COLORS; i++) {
         for (int j = 0; j < MINOR_COLORS; j++) {
-            colorMap[idx].index = i * MINOR_COLORS + j;
-            colorMap[idx].major = majorColor[i];
-            colorMap[idx].minor = minorColor[i];
-            idx++;
+            colorMap[count].index = count + 1;
+            colorMap[count].major = majorColor[i];
+            colorMap[count].minor = minorColor[j];
+            count++;
         }
     }
 }
 
-void formatColorMapEntry(char* buffer, int index, const char* major, const char* minor) {
-    sprintf(buffer, "%d | %s | %s", index, major, minor);
-}
-
-void printOnConsole(const char* lineContent) {
-    printf("%s\n", lineContent);
+static void generateOutputString(char *buffer, size_t bufSize, struct ColorPair colorMap[]) {
+    buffer[0] = '\0';
+    char line[50];
+    for (int i = 0; i < MAJOR_COLORS * MINOR_COLORS; i++) {
+        snprintf(line, sizeof(line), "%d | %s | %s\n",
+                 colorMap[i].index, colorMap[i].major, colorMap[i].minor);
+        strncat(buffer, line, bufSize - strlen(buffer) - 1);
+    }
 }
 
 int printColorMap(void (*outputFunc)(const char*)) {
-    ColorMapEntry colorMap[COLOR_MAP_SIZE];
-    char line[MAX_LINE_LEN];
-    generateColorMap(colorMap);
-    for (int i = 0; i < COLOR_MAP_SIZE; i++) {
-        formatColorMapEntry(line, colorMap[i].index, colorMap[i].major, colorMap[i].minor);
-        outputFunc(line);
-    }
-    return COLOR_MAP_SIZE;
-}
+    struct ColorPair colorMap[MAJOR_COLORS * MINOR_COLORS];
+    char buffer[1024];
 
-int main() {
-    testPrintColorMap();
-    return 0;
+    generateColorMap(colorMap);
+    generateOutputString(buffer, sizeof(buffer), colorMap);
+
+    outputFunc(buffer);
+    return MAJOR_COLORS * MINOR_COLORS;
 }
